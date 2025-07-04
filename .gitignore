@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+.next/
+npm-debug.log
+yarn-error.log
+
+# Arquivos gerados
+backend/reports_generated/

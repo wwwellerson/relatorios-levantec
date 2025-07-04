@@ -1,0 +1,2 @@
+username,hashed_password
+admin,$argon2id$v=19$m=65536,t=3,p=4$tVbKeS+FcK7V2vufkzImpA$2df9Pf3hZF5GmeLvwPK79bPHeLwWSw+dCG+pt9xE6GA
