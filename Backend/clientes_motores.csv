@@ -1,4 +1,0 @@
-id_cliente,nome_cliente,id_motor,descricao_motor,local_instalacao,corrente_nominal,potencia_cv,tipo_conexao,tensao_nominal_v,grupo_tarifario,telefone_contato,email_responsavel,data_da_instalacao,id_esp32,observacoes
-12345,Ricardo,f8c7ea8d,Sarandi,Agrop Sarandi,80.0,75.0,Trifásico,380.0,A4,55984662080,rddalcin@gmail.com,2025-06-29,dgfssaf,Este é um teste direto na API.
-101,Fazenda Boa Esperança,a1b2c3d4,Bomba Poço 1,Casa de Bombas,15.5,10.0,Trifásico,380.0,A4,55888887777.0,wwwellerson@gmail.com,2023-05-20,,Manutenção em dia.
-123456545,Wellerson,30f1f751,Casas,Sarandi,80.0,80.0,Trifasico,380.0,,55984662080,wwwellerson@gmail.com,18/10/1996,dsad87yad87a,nada
