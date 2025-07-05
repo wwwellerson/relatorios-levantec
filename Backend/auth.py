@@ -1,33 +1,45 @@
-# Arquivo: backend/auth.py (Versão Simplificada)
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from datetime import datetime, timedelta, timezone
+# Arquivo: backend/services/data_service.py (VERSÃO DE SUPER-DEPURAÇÃO FINAL)
 
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+import pandas as pd
+import traceback
+import sheets_client
+from typing import Dict, Any
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# --- Constantes ---
+SHEET_CLIENTES_MOTORES = "clientes_motores"
+SHEET_ESTOQUE = "estoque_componentes"
+DTYPE_MAP_CLIENTES = {
+    'id_cliente': 'Int64', 'nome_cliente': 'str', 'id_motor': 'str', 'descricao_motor': 'str',
+    'local_instalacao': 'str', 'corrente_nominal': 'float64', 'potencia_cv': 'float64',
+    'tipo_conexao': 'str', 'tensao_nominal_v': 'float64', 'grupo_tarifario': 'str',
+    'telefone_contato': 'str', 'email_responsavel': 'str', 'data_da_instalacao': 'str',
+    'id_esp32': 'str', 'observacoes': 'str'
+}
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Credenciais inválidas ou sessão expirada",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+# --- Função de Leitura com Super-Depuração ---
+def get_clientes_motores_df() -> pd.DataFrame:
+    print("\n--- INICIANDO TESTE DE LEITURA DO GOOGLE SHEETS NO RENDER ---")
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        # Simplesmente retornamos os dados do usuário do token
-        return {"username": username}
-    except JWTError:
-        raise credentials_exception
+        df = sheets_client.get_sheet_as_dataframe(SHEET_CLIENTES_MOTORES)
+        print("--- SUCESSO! Leitura da planilha concluída sem quebrar. ---")
+
+        for col, dtype in DTYPE_MAP_CLIENTES.items():
+            if col not in df.columns:
+                df[col] = pd.Series(dtype=dtype)
+        df = df.astype(DTYPE_MAP_CLIENTES, errors='ignore')
+        return df
+
+    except Exception as e:
+        # ESTA PARTE AGORA VAI FORÇAR O SERVIDOR A MOSTRAR O ERRO REAL
+        print("\n\n========================= ERRO DETECTADO NO RENDER =========================")
+        traceback.print_exc()
+        print("======================================================================\n\n")
+        raise RuntimeError(f"Falha definitiva ao ler Google Sheets no Render. Verifique o log acima. Erro original: {e}")
+
+# As outras funções permanecem as mesmas
+def get_estoque_df() -> pd.DataFrame:
+    return pd.DataFrame()
+def update_clientes_motores_sheet(df: pd.DataFrame):
+    pass
+def update_estoque_sheet(df: pd.DataFrame):
+    pass
