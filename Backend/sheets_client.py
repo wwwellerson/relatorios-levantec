@@ -1,4 +1,4 @@
-# Arquivo: backend/sheets_client.py (VERSÃO FINAL COM NOVA AUTENTICAÇÃO)
+# Arquivo: backend/sheets_client.py (VERSÃO FINAL E CORRETA)
 
 import gspread
 import pandas as pd
@@ -6,7 +6,6 @@ from gspread_dataframe import set_with_dataframe
 import os
 import json
 
-# O SCOPE não é mais necessário com esta biblioteca
 CREDS_FILE = 'google_credentials.json'
 SHEET_NAME = 'database_relatorios'
 
@@ -15,6 +14,7 @@ def get_client():
     Autentica com o Google usando a nova biblioteca google-auth.
     Usa a variável de ambiente no Render ou o arquivo .json localmente.
     """
+    # Procura pela variável de ambiente primeiro (para o Render)
     creds_json_str = os.getenv('GOOGLE_CREDENTIALS_JSON')
 
     if creds_json_str:
@@ -27,7 +27,6 @@ def get_client():
             raise FileNotFoundError(f"Arquivo de credenciais '{CREDS_FILE}' não encontrado para desenvolvimento local.")
         return gspread.service_account(filename=CREDS_FILE)
 
-# As funções abaixo continuam funcionando da mesma forma
 def get_sheet_as_dataframe(worksheet_name: str) -> pd.DataFrame:
     client = get_client()
     sheet = client.open(SHEET_NAME).worksheet(worksheet_name)
