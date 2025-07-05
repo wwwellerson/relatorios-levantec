@@ -17,6 +17,7 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",
     "http://192.168.1.9:3000", # Mantido para seu desenvolvimento local
+    "https://relatorios-levantec.vercel.app"
 ]
 
 app.add_middleware(
