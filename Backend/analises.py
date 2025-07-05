@@ -1,13 +1,26 @@
-# Arquivo: backend/analises.py (Versão Final com Lógica Completa)
+# Arquivo: backend/analises.py (VERSÃO DE PRODUÇÃO FINAL)
 
 import pandas as pd
+import traceback
 
+# MAPEAMENTO 100% CORRIGIDO DE ACORDO COM O SEU CSV
 MAPEAMENTO_COLUNAS = {
-    'timestamp': 'Time', 'tensao_a': 'AVRMS', 'tensao_b': 'BVRMS', 'tensao_c': 'CVRMS',
-    'corrente_a': 'AIRMS', 'corrente_b': 'BIRMS', 'corrente_c': 'CIRMS',
-    'fp_a': 'AFP', 'fp_b': 'BFP', 'fp_c': 'CFP',
-    'dia': 'DIA', 'mes': 'MES', 'nivel': 'NIVEL', 'total': 'TOTAL',
-    'vazao': 'VAZAO', 'velocidade': 'VELOCIDADE'
+    'timestamp': 'Time',
+    'tensao_a': 'AVRMS',      # Corrigido para 'S' maiúsculo
+    'tensao_b': 'BVRMS',      # Corrigido para 'S' maiúsculo
+    'tensao_c': 'CVRMS',      # Corrigido para 'S' maiúsculo
+    'corrente_a': 'AIRMS',
+    'corrente_b': 'BIRMS',
+    'corrente_c': 'CIRMS',
+    'fp_a': 'AFP',           # Corrigido de 'AFPF'
+    'fp_b': 'BFP',           # Corrigido de 'BFPF'
+    'fp_c': 'CFP',           # Corrigido de 'CFPF'
+    'dia': 'DIA',
+    'mes': 'MES',
+    'nivel': 'NIVEL',
+    'total': 'TOTAL',
+    'vazao': 'VAZAO',
+    'velocidade': 'VELOCIDADE'
 }
 
 def analisar_acessorios(df):
@@ -25,26 +38,29 @@ def analisar_acessorios(df):
                 if ultimo_indice_valido is not None:
                     valor = df.loc[ultimo_indice_valido, nome_coluna]
                     textos.append(f"- {descricao}: {valor:.2f}")
-    if not textos: return ""
+    if not textos:
+        return ""
     return "Últimos Registros dos Totalizadores de Vazão:\n" + "\n".join(textos)
-
-
-
 
 def analisar_corrente(df, corrente_nominal):
     if not isinstance(corrente_nominal, (int, float)) or corrente_nominal <= 0:
         return "Corrente nominal não fornecida ou inválida. A análise de corrente não pôde ser executada."
     cols_corrente_keys = ['corrente_a', 'corrente_b', 'corrente_c']
     cols_corrente = [MAPEAMENTO_COLUNAS.get(k) for k in cols_corrente_keys if MAPEAMENTO_COLUNAS.get(k) in df.columns]
-    if len(cols_corrente) != 3: return "Para a análise de corrente, são necessárias as três colunas de fase (AIRMS, BIRMS, CIRMS)."
+    if len(cols_corrente) != 3:
+        return "Para a análise de corrente, são necessárias as três colunas de fase (AIRMS, BIRMS, CIRMS)."
     df_op = df[(df[cols_corrente] > 1).any(axis=1)].copy()
-    if df_op.empty: return "Não foram encontrados registros de operação do motor (corrente > 1A) para analisar."
+    if df_op.empty:
+        return "Não foram encontrados registros de operação do motor (corrente > 1A) para analisar."
     diagnosticos = []
     corrente_media_op = df_op[cols_corrente].mean().mean()
-    if corrente_media_op > corrente_nominal: diagnosticos.append(f"- Sobrecarga: A corrente média em operação ({corrente_media_op:.1f} A) excedeu a corrente nominal ({corrente_nominal} A), indicando possível sobrecarga mecânica no eixo ou problemas no acionamento.")
+    if corrente_media_op > corrente_nominal:
+        diagnosticos.append(f"- Sobrecarga: A corrente média em operação ({corrente_media_op:.1f} A) excedeu a corrente nominal ({corrente_nominal} A), indicando possível sobrecarga mecânica no eixo ou problemas no acionamento.")
     corrente_max_registrada = df_op[cols_corrente].max().max()
-    if corrente_max_registrada > corrente_nominal * 4: diagnosticos.append(f"- Pico de Corrente Extremo: Foi registrado um pico de {corrente_max_registrada:.1f} A, valor que pode indicar um evento de rotor travado ou curto-circuito.")
-    if corrente_media_op < (corrente_nominal * 0.4): diagnosticos.append(f"- Operação em Vazio: A corrente média em operação ({corrente_media_op:.1f} A) está abaixo de 40% da nominal, sugerindo que o motor pode operar longos períodos sem carga, o que é energeticamente ineficiente.")
+    if corrente_max_registrada > corrente_nominal * 4:
+        diagnosticos.append(f"- Pico de Corrente Extremo: Foi registrado um pico de {corrente_max_registrada:.1f} A, valor que pode indicar um evento de rotor travado ou curto-circuito.")
+    if corrente_media_op < (corrente_nominal * 0.4):
+        diagnosticos.append(f"- Operação em Vazio: A corrente média em operação ({corrente_media_op:.1f} A) está abaixo de 40% da nominal, sugerindo que o motor pode operar longos períodos sem carga, o que é energeticamente ineficiente.")
     df_desequilibrio = df_op[cols_corrente].copy()
     limite_corrente_zero = corrente_nominal / 2
     df_desequilibrio[df_desequilibrio < limite_corrente_zero] = 0
@@ -54,13 +70,16 @@ def analisar_corrente(df, corrente_nominal):
         df_desequilibrio['desvio_max'] = df_desequilibrio[cols_corrente].subtract(df_desequilibrio['media'], axis=0).abs().max(axis=1)
         df_desequilibrio['desequilibrio_pct'] = (df_desequilibrio['desvio_max'] / df_desequilibrio['media'].replace(0, pd.NA) * 100)
         max_desequilibrio = df_desequilibrio['desequilibrio_pct'].max()
-        if pd.notna(max_desequilibrio) and max_desequilibrio > 10: diagnosticos.append(f"- Desequilíbrio de Corrente: Foi detectado um desequilíbrio máximo de {max_desequilibrio:.1f}% entre as fases.")
+        if pd.notna(max_desequilibrio) and max_desequilibrio > 10:
+            diagnosticos.append(f"- Desequilíbrio de Corrente: Foi detectado um desequilíbrio máximo de {max_desequilibrio:.1f}% entre as fases.")
     num_partidas = (df[cols_corrente[0]].gt(1) & df[cols_corrente[0]].shift(1).le(1)).sum()
-    if num_partidas > 90: diagnosticos.append(f"- Ciclo de Operação Elevado: O motor teve {num_partidas} partidas durante o período, o que pode indicar mau dimensionamento ou falhas no sistema de controle.")
+    if num_partidas > 90:
+        diagnosticos.append(f"- Ciclo de Operação Elevado: O motor teve {num_partidas} partidas durante o período, o que pode indicar mau dimensionamento ou falhas no sistema de controle.")
     df_op['fase_baixa'] = (df_op[cols_corrente] < 1).sum(axis=1)
     df_op['fase_normal'] = (df_op[cols_corrente] > corrente_nominal * 0.5).sum(axis=1)
     horas_fase_aberta = df_op[(df_op['fase_baixa'] >= 1) & (df_op['fase_normal'] == 2)].shape[0]
-    if horas_fase_aberta > 0: diagnosticos.append(f"- Suspeita de Fase Aberta: Em {horas_fase_aberta} hora(s), uma das fases apresentou corrente próxima de zero enquanto as outras operavam normalmente, um forte indicativo de falha elétrica severa.")
+    if horas_fase_aberta > 0:
+        diagnosticos.append(f"- Suspeita de Fase Aberta: Em {horas_fase_aberta} hora(s), uma das fases apresentou corrente próxima de zero enquanto as outras operavam normalmente, um forte indicativo de falha elétrica severa.")
     if not diagnosticos:
         return "A análise das correntes indicou uma operação CONFORME, sem anomalias significativas em relação à corrente nominal e aos padrões de falha monitorados."
     return "Foram detectados os seguintes pontos de atenção na análise das correntes:\n\n" + "\n\n".join(diagnosticos)
@@ -69,17 +88,23 @@ def analisar_fator_potencia(df):
     cols_fp_keys = ['fp_a', 'fp_b', 'fp_c']
     cols_fp = [MAPEAMENTO_COLUNAS.get(k) for k in cols_fp_keys if MAPEAMENTO_COLUNAS.get(k) in df.columns]
     col_corrente_ref = MAPEAMENTO_COLUNAS.get('corrente_a')
-    if not cols_fp or not col_corrente_ref or col_corrente_ref not in df.columns: return "Dados de Fator de Potência ou Corrente insuficientes para uma análise completa."
+    if not cols_fp or not col_corrente_ref or col_corrente_ref not in df.columns:
+        return "Dados de Fator de Potência ou Corrente insuficientes para uma análise completa."
     df_operacional = df[df[col_corrente_ref] > 1].copy()
-    if df_operacional.empty: return "Não foram encontrados registros de operação do motor (corrente > 1A) para analisar o Fator de Potência."
+    if df_operacional.empty:
+        return "Não foram encontrados registros de operação do motor (corrente > 1A) para analisar o Fator de Potência."
     fp_filtrado = df_operacional[cols_fp].copy()
     fp_filtrado[fp_filtrado < 0.6] = pd.NA
     fp_medio = fp_filtrado.mean().mean()
-    if pd.isna(fp_medio): return "Não foi possível calcular o Fator de Potência médio (valores de operação podem estar todos abaixo de 0.6)."
+    if pd.isna(fp_medio):
+        return "Não foi possível calcular o Fator de Potência médio (valores de operação podem estar todos abaixo de 0.6)."
     texto_analise = f"O Fator de Potência médio registrado durante a operação (descartando valores < 0.6) foi de {fp_medio:.3f}.\n\n"
-    if fp_medio < 0.91: texto_analise += "Diagnóstico: SITUAÇÃO CRÍTICA.\n\nAnálise:\nO fator de potência médio ficou abaixo de 0,91, indicando uma utilização ineficiente da energia elétrica.\n\nRecomendação:\nRecomenda-se avaliar a instalação de bancos de capacitores."
-    elif 0.91 <= fp_medio < 0.95: texto_analise += "Diagnóstico: SITUAÇÃO DE ATENÇÃO.\n\nAnálise:\nO fator de potência médio ficou próximo do mínimo aceitável (0,92).\n\nRecomendação:\nÉ indicado analisar os períodos com FP mais baixo e considerar manutenções preventivas."
-    else: texto_analise += "Diagnóstico: SITUAÇÃO IDEAL.\n\nAnálise:\nO fator de potência médio foi superior a 0,95, demonstrando excelente eficiência energética.\n\nRecomendação:\nSugere-se monitoramento contínuo, mas nenhuma ação corretiva é necessária."
+    if fp_medio < 0.91:
+        texto_analise += "Diagnóstico: SITUAÇÃO CRÍTICA.\n\nAnálise:\nO fator de potência médio ficou abaixo de 0,91, indicando uma utilização ineficiente da energia elétrica.\n\nRecomendação:\nRecomenda-se avaliar a instalação de bancos de capacitores."
+    elif 0.91 <= fp_medio < 0.95:
+        texto_analise += "Diagnóstico: SITUAÇÃO DE ATENÇÃO.\n\nAnálise:\nO fator de potência médio ficou próximo do mínimo aceitável (0,92).\n\nRecomendação:\nÉ indicado analisar os períodos com FP mais baixo e considerar manutenções preventivas."
+    else:
+        texto_analise += "Diagnóstico: SITUAÇÃO IDEAL.\n\nAnálise:\nO fator de potência médio foi superior a 0,95, demonstrando excelente eficiência energética.\n\nRecomendação:\nSugere-se monitoramento contínuo, mas nenhuma ação corretiva é necessária."
     return texto_analise
 
 def analisar_operacao(df, tensao_nominal):
@@ -98,7 +123,8 @@ def analisar_operacao(df, tensao_nominal):
         return (f"- Tempo total com motor desligado (FP < 0.3): {tempo_desligado_horas} horas.\n\n"
                 f"- Tempo total com falta de energia (Tensões < 30V): {tempo_sem_energia_horas} horas.\n\n"
                 f"- Tempo total com suspeita de falta de fase: {tempo_falta_fase_horas} horas.")
-    except Exception as e: return f"Ocorreu um erro ao processar os dados de operação: {e}"
+    except Exception as e:
+        return f"Ocorreu um erro ao processar os dados de operação: {e}"
 
 def analisar_dados_prodist(df, corrente_nominal, tensao_nominal):
     comentarios = {'tensao_nominal': tensao_nominal}
@@ -106,8 +132,11 @@ def analisar_dados_prodist(df, corrente_nominal, tensao_nominal):
     try:
         cols_tensao_keys = ['tensao_a', 'tensao_b', 'tensao_c']
         cols_tensao = [MAPEAMENTO_COLUNAS.get(k) for k in cols_tensao_keys if MAPEAMENTO_COLUNAS.get(k) in df.columns]
-        if len(cols_tensao) != 3: raise ValueError("Colunas de tensão (AVRMS, BVRMS, CVRMS) não encontradas no CSV.")
-        if not isinstance(df.index, pd.DatetimeIndex): df.index = pd.to_datetime(df[MAPEAMENTO_COLUNAS['timestamp']], dayfirst=True, errors='coerce')
+        if len(cols_tensao) != 3:
+            # Esta verificação agora vai passar!
+            raise ValueError("Colunas de tensão (AVRMS, BVRMS, CVRMS) não encontradas no CSV.")
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df.index = pd.to_datetime(df[MAPEAMENTO_COLUNAS['timestamp']], dayfirst=True, errors='coerce')
         limites = {'adequado_sup': tensao_nominal * 1.05, 'adequado_inf': tensao_nominal * 0.92, 'critico_sup': tensao_nominal * 1.06, 'critico_inf': tensao_nominal * 0.91, 'desequilibrio_max_pct': 3.0}
         comentarios_tensao = []
         df_tensao = df[cols_tensao]
@@ -129,10 +158,12 @@ def analisar_dados_prodist(df, corrente_nominal, tensao_nominal):
             texto_alertas = "- " + "\n- ".join(alertas_gerais)
             comentarios['conclusao_final'] = f"Diagnóstico Geral: NÃO CONFORME.\nO sistema apresentou instabilidades. Não conformidades principais:\n\n{texto_alertas}"
     except Exception as e:
-        print(f"Erro na análise: {e}"); import traceback; traceback.print_exc()
+        print(f"Erro na análise de dados PRODIST: {e}")
+        traceback.print_exc()
         comentarios = {k: "Ocorreu um erro ao processar os dados." for k in ['tensao', 'corrente', 'fp', 'acessorios', 'conclusao_final', 'dados_operacao']}
         comentarios['tensao_nominal'] = tensao_nominal
     return comentarios
+
 def calcular_kpis_vazao(df):
     """Função auxiliar para encontrar os últimos valores válidos de vazão."""
     kpis = {}

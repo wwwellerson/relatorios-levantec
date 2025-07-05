@@ -13,3 +13,4 @@ yarn-error.log
 
 # Arquivos gerados
 backend/reports_generated/
+google_credentials.json

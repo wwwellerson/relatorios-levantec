@@ -102,8 +102,8 @@ def gerar_os_pdf(dados_cliente, dados_motor, tipo_servico, descricao_servico):
     pdf.multi_cell(0, 6, texto_final, 0, 'J')
     pdf.ln(5)
 
-    pdf.set_font('Arial', 'B', 11)
-    pdf.cell(0, 10, f"Data do Serviço: {data_servico}", 0, 1, 'L')
+    #pdf.set_font('Arial', 'B', 11)
+    #pdf.cell(0, 10, f"Data do Serviço: {data_servico}", 0, 1, 'L')
 
     # --- GERAÇÃO DO NOME DO ARQUIVO ATUALIZADA ---
     nome_cliente_safe = dados_cliente.get('nome_cliente', 'Cliente',).replace(' ', '_')
