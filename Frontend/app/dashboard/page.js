@@ -1,4 +1,4 @@
-// Arquivo: frontend/app/dashboard/page.js (com todas as melhorias e gráfico de FP restaurado)
+// Arquivo: frontend/app/dashboard/page.js (com a correção da URL da API)
 "use client"
 
 import { useState } from "react"
@@ -12,7 +12,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 
 function KpiCard({ title, value, unit }) {
     if (value === null || value === undefined) return null;
-    const displayValue = typeof value === 'number' ? value.toFixed(2) : value; // Ajustado para 2 casas decimais para consistência
+    const displayValue = typeof value === 'number' ? value.toFixed(2) : value;
     const displayUnit = unit || '';
     return (
         <Card>
@@ -27,7 +27,7 @@ function GraficoLinha({ title, data, lines }) {
     const formatarTickEixoX = (timeStr) => {
         try {
             const data = new Date(timeStr);
-            if (isNaN(data.getTime())) return timeStr; 
+            if (isNaN(data.getTime())) return timeStr;
             const dia = String(data.getDate()).padStart(2, '0');
             const mes = String(data.getMonth() + 1).padStart(2, '0');
             return `${dia}/${mes}`;
@@ -67,7 +67,9 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const apiBaseUrl = "http://192.168.1.9:8000";
+    // ▼▼▼ AQUI ESTÁ A CORREÇÃO ▼▼▼
+    // Usa a variável de ambiente para a URL da API, que funcionará tanto localmente quanto em produção.
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
 
     const handleAnalisarArquivo = async () => {
         if (!arquivo) {
